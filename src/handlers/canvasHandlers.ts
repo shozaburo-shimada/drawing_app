@@ -2,7 +2,9 @@ import Paper from 'paper';
 import { DraggedItem, Point } from '../types/paperTypes';
 
 interface CanvasHandlersProps {
+  isMoving: boolean;
   isDrawing: boolean;
+  isErasing: boolean;
   pointsRef: React.MutableRefObject<Point[]>;
   draggedItemRef: React.MutableRefObject<DraggedItem | null>;
   currentPath: paper.Path | null;
@@ -14,7 +16,9 @@ interface CanvasHandlersProps {
   各種イベントハンドラーを返す関数
 */
 export const createCanvasHandlers = ({
+  isMoving,
   isDrawing,
+  isErasing,
   pointsRef,
   draggedItemRef,
   currentPath,
@@ -25,14 +29,14 @@ export const createCanvasHandlers = ({
     if (!paperScope.current) return;
     const paper = paperScope.current;
 
-    // 非Drawモード時
-    if (!isDrawing) {
+    //Movingモード時
+    if (isMoving) {
       // セグメントのヒットテスト
       let hitResult = paper.project.hitTest(event.point, {
         segments: true,
         stroke: false,
         fill: false,
-        tolerance: 10
+        tolerance: 5
       });
 
       // セグメントへのヒット
@@ -55,12 +59,13 @@ export const createCanvasHandlers = ({
       // 頂点にマーカー設置
       const marker = new paper.Shape.Circle({
         center: event.point,
-        radius: 5,
-        fillColor: 'rgb(64, 64, 64)',
+        radius: 4,
+        fillColor: 'rgb(255, 255, 255)',
+        strokeColor: 'black',
       });
 
       // 頂点を保存
-      pointsRef.current.push({ marker: marker, connections: [] });
+      pointsRef.current.push({ marker: marker });
 
       if (!currentPath) {
         const newPath = new paper.Path();
@@ -71,6 +76,37 @@ export const createCanvasHandlers = ({
         currentPath.add(event.point);
       }
     }
+
+    // Eraseモード時
+    if (isErasing) {
+
+      // セグメントのヒットテスト
+      let hitResult = paper.project.hitTest(event.point, {
+        segments: true,
+        stroke: false,
+        fill: false,
+        tolerance: 5
+      });
+
+      // セグメントへのヒット
+      if (hitResult && hitResult.segment) {
+        const segment = hitResult.segment;
+        const index = segment.index;
+
+        //セグメントに対応するマーカーを探す
+        const marker_idx = pointsRef.current.findIndex(p => p.marker.position.equals(segment.point));
+
+        console.log(pointsRef.current);
+        console.log('Delete: ', marker_idx);
+
+        //削除
+        console.log(pointsRef.current);
+        pointsRef.current[marker_idx].marker.remove();
+        pointsRef.current.splice(marker_idx, 1);
+        segment.remove();
+      }
+
+    }
   };
 
   const handleMouseUp = () => {
@@ -80,8 +116,8 @@ export const createCanvasHandlers = ({
   };
 
   const handleMouseDrag = (event: paper.ToolEvent) => {
-    //非Drawモード時
-    if (!isDrawing) {
+    //Movingモード時
+    if (isMoving) {
       if (!draggedItemRef.current) return;
       const { segment, index } = draggedItemRef.current;
 
@@ -101,3 +137,28 @@ export const createCanvasHandlers = ({
 
   return { handleMouseDown, handleMouseUp, handleMouseDrag };
 };
+
+//頂点への当たり判定
+function hitSegment(paper, event, pointsRef) {
+  let segment = null;
+  let index = null;
+  let marker_idx = null;
+  // セグメントのヒットテスト
+  let hitResult = paper.project.hitTest(event.point, {
+    segments: true,
+    stroke: false,
+    fill: false,
+    tolerance: 5
+  });
+
+  // セグメントへのヒット
+  if (hitResult && hitResult.segment) {
+    segment = hitResult.segment;
+    index = segment.index;
+
+    //セグメントに対応するマーカーを探す
+    marker_idx = pointsRef.current.findIndex(p => p.marker.position.equals(segment.point));
+  }
+
+  return { segment, marker_idx };
+}

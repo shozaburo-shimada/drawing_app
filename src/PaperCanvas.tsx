@@ -20,6 +20,7 @@ const Canvas = () => {
   const paperScope = useRef<paper.PaperScope | null>(null);
 
   // Flag
+  const [isMoving, setIsMoving] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isErasing, setIsErasing] = useState(false);
 
@@ -74,24 +75,34 @@ const Canvas = () => {
     return () => {
       if (tool) tool.remove();
     };
-  }, [isDrawing, isErasing, currentPath, draggedItemRef, pointsRef]);
+  }, [isMoving, isDrawing, isErasing, currentPath, draggedItemRef]);
 
   //各種イベントハンドラー
+  const toggleMoving = () => {
+    setIsMoving(!isMoving);
+    setIsDrawing(false);
+    setIsErasing(false);
+  };
+
   const toggleDrawing = () => {
     setIsDrawing(!isDrawing);
     if (currentPath) {
       setCurrentPath(null);
     }
+    setIsMoving(false);
     setIsErasing(false);
   };
 
   const toggleErasing = () => {
     setIsErasing(!isErasing);
+    setIsMoving(false);
     setIsDrawing(false);
   };
 
   const { handleMouseDown, handleMouseUp, handleMouseDrag } = createCanvasHandlers({
+    isMoving,
     isDrawing,
+    isErasing,
     pointsRef,
     draggedItemRef,
     currentPath,
@@ -103,6 +114,8 @@ const Canvas = () => {
     <div style={{ display: 'flex', flexDirection: 'row' }}>
       <CanvasView canvasRef={canvasRef} />
       <Toolbar
+        isMoving={isMoving}
+        toggleMoving={toggleMoving}
         isDrawing={isDrawing}
         toggleDrawing={toggleDrawing}
         isErasing={isErasing}
