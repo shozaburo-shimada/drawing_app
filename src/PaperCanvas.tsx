@@ -1,10 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Paper from 'paper';
 
-interface Point {
-  marker: paper.Shape.Circle;
-  connections: paper.Path.Line[];
-}
+// 型定義
+import { Point, DraggedItem } from './types/paperTypes';
+
+// フック
+//import usePaperSetup from './hooks/usePaperSetup';
+
+//イベントハンドラー
+import { createCanvasHandlers } from './handlers/canvasHandlers.ts';
+
+//UIコンポーネント
+import CanvasView from './components/CanvasView.tsx';
+import Toolbar from './components/Toolbar.tsx';
 
 const Canvas = () => {
   const canvasRef = useRef(null);
@@ -15,16 +23,13 @@ const Canvas = () => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [isErasing, setIsErasing] = useState(false);
 
-  // ドラッグ操作のための参照
-  const draggedItemRef = useRef<{
-    segment?: paper.Segment;
-    //marker?: paper.Shape.Circle;
-    index: number; //markerのindex
-  } | null>(null);
-
   // 頂点(point)の保存
   const pointsRef = useRef<Point[]>([]);
   const [currentPath, setCurrentPath] = useState<paper.Path | null>(null);
+
+  // ドラッグ中のアイテム
+  const draggedItemRef = useRef<DraggedItem | null>(null);
+
 
   // Paper.jsの初期化
   useEffect(() => {
@@ -85,104 +90,24 @@ const Canvas = () => {
     setIsDrawing(false);
   };
 
-  const handleMouseDown = (event: paper.ToolEvent) => {
-    if (!paperScope.current) return;
-    const paper = paperScope.current;
-
-    // 非Drawモード時
-    if (!isDrawing) {
-      // セグメントのヒットテスト
-      let hitResult = paper.project.hitTest(event.point, {
-        segments: true,
-        stroke: false,
-        fill: false,
-        tolerance: 10
-      });
-
-      // セグメントへのヒット
-      if (hitResult && hitResult.segment) {// hitResult自体がnullでないかどうかもチェック
-        const segment = hitResult.segment;
-        const index = segment.index;
-
-        //セグメントに対応するマーカーを探す
-        const marker_idx = pointsRef.current.findIndex(p => p.marker.position.equals(segment.point));
-        console.log('Marker hit at index:', marker_idx);
-
-        draggedItemRef.current = {
-          segment: segment,
-          //marker: pointsRef.current[marker_idx].marker,
-          index: marker_idx
-        };
-      }
-    }
-
-    // Drawモード時
-    if (isDrawing) {
-      // 頂点にマーカー設置
-      const marker = new paper.Shape.Circle({
-        center: event.point,
-        radius: 5,
-        fillColor: 'rgb(64, 64, 64)',
-      });
-
-      // 頂点を保存
-      pointsRef.current.push({ marker: marker, connections: [] });
-
-      if (!currentPath) {
-        const newPath = new paper.Path();
-        newPath.strokeColor = new paper.Color('black');
-        newPath.add(event.point);
-        setCurrentPath(newPath);
-      } else {
-        currentPath.add(event.point);
-      }
-    }
-  };
-
-  const handleMouseUp = () => {
-    if (draggedItemRef.current) {
-      console.log('Drag operation completed');
-      draggedItemRef.current = null;
-    }
-  };
-
-  const handleMouseDrag = (event: paper.ToolEvent) => {
-    //非Drawモード時
-    if (!isDrawing) {
-      if (!draggedItemRef.current) return;
-      const { segment, index } = draggedItemRef.current;
-
-      // セグメントまたはマーカーを移動
-      if (segment) {
-        // セグメントを移動
-        segment.point = event.point;
-
-        // 対応するマーカーも移動
-        const point = pointsRef.current[index];
-        if (point && point.marker) {
-          point.marker.position = event.point;
-        }
-      }
-    }
-
-  };
+  const { handleMouseDown, handleMouseUp, handleMouseDrag } = createCanvasHandlers({
+    isDrawing,
+    pointsRef,
+    draggedItemRef,
+    currentPath,
+    setCurrentPath,
+    paperScope,
+  });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'row' }}>
-      <canvas
-        ref={canvasRef}
-        width={600}
-        height={500}
-        style={{ border: '1px solid black' }}
+      <CanvasView canvasRef={canvasRef} />
+      <Toolbar
+        isDrawing={isDrawing}
+        toggleDrawing={toggleDrawing}
+        isErasing={isErasing}
+        toggleErasing={toggleErasing}
       />
-      <div style={{ display: 'flex', flexDirection: 'column', marginLeft: '10px' }}>
-        <button onClick={toggleDrawing} className={isDrawing ? "bg-blue-500" : ""}>
-          {isDrawing ? 'Stop Drawing' : 'Start Drawing'}
-        </button>
-        <button onClick={toggleErasing} className={isErasing ? "bg-yellow-500" : ""}>
-          {isErasing ? 'Stop Erasing' : 'Start Erasing'}
-        </button>
-      </div>
     </div>
   );
 };
