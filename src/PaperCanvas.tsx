@@ -1,140 +1,171 @@
 import React, { useState, useEffect, useRef } from 'react';
-import paper from 'paper';
+import Paper from 'paper';
 
-// マウスポインターの座標
 interface Point {
-  x: number;
-  y: number;
+  marker: paper.Shape.Circle;
+  connections: paper.Path.Line[];
 }
 
 const Canvas = () => {
   const canvasRef = useRef(null);
-  const [isDrawing, setIsDrawing] = useState(false)
-  const [isErasing, setIsErasing] = useState(false)
-  //頂点(point)の保存
-  const [currentPoint, setCurrentPoint] = useState<Point | null>(null)
-  const [points, setPoints] = useState<Point[]>([])
-  //パス(path)の保存
+  const toolRef = useRef<paper.Tool | null>(null);
+  const paperScope = useRef<paper.PaperScope | null>(null);
+
+  // Flag
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [isErasing, setIsErasing] = useState(false);
+
+  // ドラッグ操作のための参照
+  const draggedItemRef = useRef<{
+    segment?: paper.Segment;
+    //marker?: paper.Shape.Circle;
+    index: number; //markerのindex
+  } | null>(null);
+
+  // 頂点(point)の保存
+  const pointsRef = useRef<Point[]>([]);
   const [currentPath, setCurrentPath] = useState<paper.Path | null>(null);
-  const [paths, setPaths] = useState<paper.Path[]>([]);
-  //未確定パス
-  const [previewPath, setPreviewPath] = useState<paper.Path | null>(null);
 
-
+  // Paper.jsの初期化
   useEffect(() => {
-    // canvasが準備できたらpaper.jsを初期化
-    if (canvasRef.current) {
-      paper.setup(canvasRef.current);
+    if (!canvasRef.current) return;
 
-      // ここに描画処理を書く
+    // 新しいPaperScopeを作成して保存
+    const paperInstance = new Paper.PaperScope();
+    paperScope.current = paperInstance;
 
-      // 例: 円を描画
-      const circle = new paper.Path.Circle({
-        center: [50, 50],
-        radius: 30,
-        strokeColor: 'black',
-      });
+    // このスコープでキャンバスを設定
+    paperInstance.setup(canvasRef.current);
 
-      // 例: 直線を描画
-      var myPath = new paper.Path();
-      myPath.strokeColor = new paper.Color('black');
-      myPath.add(new paper.Point(0, 0));
-      myPath.add(new paper.Point(100, 50));
-      //setPath(newPath);
-
-      // 任意で、交差判定などの処理もここで行えます。
-
-      // マウスムーブ時の処理
-      paper.view.onMouseMove = (event: paper.ToolEvent) => {
-        const nearestPoint = myPath.getNearestPoint(event.point);
-        const distance = nearestPoint.getDistance(event.point);
-
-        // ある程度の近さ（例: 5px以内）で色を変える
-        if (distance < 5) {
-          myPath.strokeColor = new paper.Color('red');
-        } else {
-          myPath.strokeColor = new paper.Color('black');
-        }
-
-        paper.view.update();  // 変更を適用
-      };
-
-    }
-    // クリーンアップ処理 (コンポーネントがアンマウントされた時)
     return () => {
-      paper.project.clear();  // 既存のpaper.jsプロジェクトをクリア
+      if (paperInstance && paperInstance.project) {
+        paperInstance.project.clear();
+      }
+      if (toolRef.current) {
+        toolRef.current.remove();
+      }
     };
   }, []);
+
+  // ツールとイベントハンドラーの設定
+  useEffect(() => {
+    if (!paperScope.current || !paperScope.current.project) return;
+
+    const paper = paperScope.current;
+
+    // 既存のツールを削除
+    if (toolRef.current) {
+      toolRef.current.remove();
+    }
+
+    // 新しいツールを設定
+    const tool = new paper.Tool();
+    toolRef.current = tool;
+
+    tool.onMouseDown = handleMouseDown;
+    tool.onMouseUp = handleMouseUp;
+    tool.onMouseDrag = handleMouseDrag;
+
+    return () => {
+      if (tool) tool.remove();
+    };
+  }, [isDrawing, isErasing, currentPath, draggedItemRef, pointsRef]);
+
+  //各種イベントハンドラー
   const toggleDrawing = () => {
-
-    //Draw終了時、プレビューパスを消す
-    if (isDrawing) {
-      if (previewPath) previewPath.remove();
+    setIsDrawing(!isDrawing);
+    if (currentPath) {
+      setCurrentPath(null);
     }
+    setIsErasing(false);
+  };
 
-    setIsDrawing(!isDrawing)
-    setCurrentPath(null)
+  const toggleErasing = () => {
+    setIsErasing(!isErasing);
+    setIsDrawing(false);
+  };
 
-  }
+  const handleMouseDown = (event: paper.ToolEvent) => {
+    if (!paperScope.current) return;
+    const paper = paperScope.current;
 
-  const toggleErasing = () => { }
-
-  const handleMouseMove: React.MouseEvent<HTMLCanvasElement> = (event) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    // クリックした座標を取得
-    const rect = canvas.getBoundingClientRect();
-
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-
-    //console.log(x, y);
-
-    //未確定パス（パスのプレビュー）
-    if (isDrawing && currentPath) {
-      if (previewPath) previewPath.remove();
-
-      const newPreviewPath = new paper.Path();
-      newPreviewPath.strokeColor = new paper.Color('black');
-      newPreviewPath.add(new paper.Point(currentPoint.x, currentPoint.y));
-      newPreviewPath.add(new paper.Point(x, y));
-      setPreviewPath(newPreviewPath);
-    }
-
-  }
-
-  const handleMouseDown: React.MouseEvent<HTMLCanvasElement> = (event) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    // クリックした座標を取得
-    const rect = canvas.getBoundingClientRect();
-
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-
-    if (isDrawing) {
-      //頂点にマーカー設置
-      const marker = new paper.Shape.Circle({
-        center: [x, y],
-        radius: 3,
-        fillColor: 'rgb(64, 64, 64)',
+    // 非Drawモード時
+    if (!isDrawing) {
+      // セグメントのヒットテスト
+      let hitResult = paper.project.hitTest(event.point, {
+        segments: true,
+        stroke: false,
+        fill: false,
+        tolerance: 10
       });
-      //設置したマーカーを保存
-      setCurrentPoint({ x: x, y: y })
 
-      if (!currentPath) {
-        //始点を置く
-        const newPath = new paper.Path();
-        newPath.strokeColor = new paper.Color('black');
-        newPath.add(new paper.Point(x, y));
-        setCurrentPath(newPath);
-      } else {
-        //線を引く
-        currentPath.add(new paper.Point(x, y));
+      // セグメントへのヒット
+      if (hitResult && hitResult.segment) {// hitResult自体がnullでないかどうかもチェック
+        const segment = hitResult.segment;
+        const index = segment.index;
+
+        //セグメントに対応するマーカーを探す
+        const marker_idx = pointsRef.current.findIndex(p => p.marker.position.equals(segment.point));
+        console.log('Marker hit at index:', marker_idx);
+
+        draggedItemRef.current = {
+          segment: segment,
+          //marker: pointsRef.current[marker_idx].marker,
+          index: marker_idx
+        };
       }
     }
-  }
 
+    // Drawモード時
+    if (isDrawing) {
+      // 頂点にマーカー設置
+      const marker = new paper.Shape.Circle({
+        center: event.point,
+        radius: 5,
+        fillColor: 'rgb(64, 64, 64)',
+      });
+
+      // 頂点を保存
+      pointsRef.current.push({ marker: marker, connections: [] });
+
+      if (!currentPath) {
+        const newPath = new paper.Path();
+        newPath.strokeColor = new paper.Color('black');
+        newPath.add(event.point);
+        setCurrentPath(newPath);
+      } else {
+        currentPath.add(event.point);
+      }
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (draggedItemRef.current) {
+      console.log('Drag operation completed');
+      draggedItemRef.current = null;
+    }
+  };
+
+  const handleMouseDrag = (event: paper.ToolEvent) => {
+    //非Drawモード時
+    if (!isDrawing) {
+      if (!draggedItemRef.current) return;
+      const { segment, index } = draggedItemRef.current;
+
+      // セグメントまたはマーカーを移動
+      if (segment) {
+        // セグメントを移動
+        segment.point = event.point;
+
+        // 対応するマーカーも移動
+        const point = pointsRef.current[index];
+        if (point && point.marker) {
+          point.marker.position = event.point;
+        }
+      }
+    }
+
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'row' }}>
@@ -143,8 +174,6 @@ const Canvas = () => {
         width={600}
         height={500}
         style={{ border: '1px solid black' }}
-        onMouseMove={handleMouseMove}
-        onMouseDown={handleMouseDown}
       />
       <div style={{ display: 'flex', flexDirection: 'column', marginLeft: '10px' }}>
         <button onClick={toggleDrawing} className={isDrawing ? "bg-blue-500" : ""}>
