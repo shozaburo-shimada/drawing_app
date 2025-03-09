@@ -1,5 +1,5 @@
 import Paper from 'paper';
-import { TargetItem, Point } from '../types/paperTypes';
+import { TargetPoint, Point } from '../types/paperTypes';
 
 /* 
   Closure
@@ -15,7 +15,7 @@ export const createCanvasHandlers = ({
   setCurrentPath,
   paperScope,
 }) => {
-  let draggedItem: TargetItem | null = null;
+  let draggedPoint: TargetPoint | null = null;
 
   const handleMouseDown = (event: paper.ToolEvent) => {
     if (!paperScope.current) return;
@@ -30,11 +30,11 @@ export const createCanvasHandlers = ({
       if (targetSegment.segment) {
         console.log('Hit', targetSegment.segment);
 
-        draggedItem = {
+        draggedPoint = {
           segment: targetSegment.segment,
           marker: targetSegment.marker
         }
-        console.log('Hit', draggedItem);
+        console.log('Hit', draggedPoint);
       }
     }
 
@@ -69,14 +69,16 @@ export const createCanvasHandlers = ({
         console.log('Hit', targetSegment.segment);
         targetSegment.marker?.remove();
         targetSegment.segment.remove();
+
+
       }
     }
   };
 
   const handleMouseUp = () => {
     console.log('Mouse Up');
-    if (draggedItem) {
-      draggedItem = null;
+    if (draggedPoint) {
+      draggedPoint = null;
     }
   };
 
@@ -84,8 +86,8 @@ export const createCanvasHandlers = ({
     console.log('Mouse Drag');
     //Movingモード時
     if (isMoving) {
-      if (draggedItem) {
-        const { segment, marker } = draggedItem;
+      if (draggedPoint) {
+        const { segment, marker } = draggedPoint;
         segment.point = event.point;
         marker.position = event.point;
       }
@@ -97,7 +99,7 @@ export const createCanvasHandlers = ({
 
 //頂点への当たり判定
 function hitSegment(paper, event, pointsRef) {
-  let targetSegment: TargetItem = { segment: null, marker: null };
+  let targetSegment: TargetPoint = { segment: null, marker: null };
 
   let hitResult = paper.project.hitTest(event.point, {
     segments: true,

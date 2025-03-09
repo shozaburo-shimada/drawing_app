@@ -4,7 +4,7 @@ export interface Point {
   marker: paper.Shape.Circle;
 }
 
-export interface TargetItem {
+export interface TargetPoint {
   segment: paper.Segment | null;
   marker: paper.Shape.Circle | null;
 }

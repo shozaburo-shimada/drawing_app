@@ -3,7 +3,7 @@ import Canvas from './PaperCanvas.tsx';
 const App = () => {
   return (
     <div style={{ padding: '20px' }}>
-      <h1>React + Paper.js での2D CAD</h1>
+      <h2>Project name</h2>
       <Canvas />
     </div>
   );
