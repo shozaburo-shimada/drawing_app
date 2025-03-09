@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Paper from 'paper';
 
 // 型定義
-import { Point, DraggedItem } from './types/paperTypes';
+import { Point, TargetItem } from './types/paperTypes';
 
 // フック
 //import usePaperSetup from './hooks/usePaperSetup';
@@ -27,10 +27,6 @@ const Canvas = () => {
   // 頂点(point)の保存
   const pointsRef = useRef<Point[]>([]);
   const [currentPath, setCurrentPath] = useState<paper.Path | null>(null);
-
-  // ドラッグ中のアイテム
-  const draggedItemRef = useRef<DraggedItem | null>(null);
-
 
   // Paper.jsの初期化
   useEffect(() => {
@@ -75,7 +71,7 @@ const Canvas = () => {
     return () => {
       if (tool) tool.remove();
     };
-  }, [isMoving, isDrawing, isErasing, currentPath, draggedItemRef]);
+  }, [isMoving, isDrawing, isErasing, currentPath]);
 
   //各種イベントハンドラー
   const toggleMoving = () => {
@@ -104,7 +100,6 @@ const Canvas = () => {
     isDrawing,
     isErasing,
     pointsRef,
-    draggedItemRef,
     currentPath,
     setCurrentPath,
     paperScope,
