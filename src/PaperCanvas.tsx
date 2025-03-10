@@ -13,6 +13,7 @@ import { createCanvasHandlers } from './handlers/canvasHandlers.ts';
 //UIコンポーネント
 import CanvasView from './components/CanvasView.tsx';
 import Toolbar from './components/Toolbar.tsx';
+import SettingsPanel from './components/SettingsPanel.tsx';
 
 const Canvas = () => {
   const canvasRef = useRef(null);
@@ -23,6 +24,12 @@ const Canvas = () => {
   const [isMoving, setIsMoving] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isErasing, setIsErasing] = useState(false);
+  // Settings
+  const [x, setX] = useState(0);
+  const [y, setY] = useState(0);
+  const [strokeWidth, setStrokeWidth] = useState(1);
+  const [strokeColor, setStrokeColor] = useState('black');
+  const [angle, setAngle] = useState(0);
 
   // 頂点(point)の保存
   const pointsRef = useRef<Point[]>([]);
@@ -95,6 +102,14 @@ const Canvas = () => {
     setIsDrawing(false);
   };
 
+  const handleSettingsChange = (settings: { x: number; y: number; strokeWidth: number; strokeColor: string; angle: number }) => {
+    setX(settings.x);
+    setY(settings.y);
+    setStrokeWidth(settings.strokeWidth);
+    setStrokeColor(settings.strokeColor);
+    setAngle(settings.angle);
+  };
+
   const { handleMouseDown, handleMouseUp, handleMouseDrag } = createCanvasHandlers({
     isMoving,
     isDrawing,
@@ -106,8 +121,7 @@ const Canvas = () => {
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'row' }}>
-      <CanvasView canvasRef={canvasRef} />
+    <div style={{ display: 'flex', flexDirection: 'row', height: '100vh' }}>
       <Toolbar
         isMoving={isMoving}
         toggleMoving={toggleMoving}
@@ -115,6 +129,15 @@ const Canvas = () => {
         toggleDrawing={toggleDrawing}
         isErasing={isErasing}
         toggleErasing={toggleErasing}
+      />
+      <CanvasView canvasRef={canvasRef} />
+      <SettingsPanel
+        x={x}
+        y={y}
+        strokeWidth={strokeWidth}
+        strokeColor={strokeColor}
+        angle={angle}
+        onSettingsChange={handleSettingsChange}
       />
     </div>
   );

@@ -18,6 +18,11 @@ $ cd react_app
 $ npm install @mui/material @emotion/react @emotion/styled
 ```
 
+## Material Iconのインストール
+```bash
+$ npm install @mui/icons-material
+```
+
 # はじめかた
 
 ## ローカルサーバーの起動
