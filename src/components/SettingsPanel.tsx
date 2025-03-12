@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Card, CardContent, TextField } from "@mui/material/";
+import { Box, Card, CardContent, TextField, InputAdornment } from "@mui/material/";
+
 
 interface SettingsPanelProps {
   x: number;
@@ -48,62 +49,58 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ x, y, strokeWidth, stroke
   };
 
   return (
-    <div id="settings_panel" style={{ padding: '10px', border: '0px solid black', width: '200px' }}>
+    <Box id="settings_panel" sx={{ borderLeft: 1, borderColor: '#BBBBBB' }} style={{ padding: '10px', width: '200px', }}>
       <Card className="mb-4">
         <div className="pb-2">
           <h3>座標</h3>
         </div>
         <CardContent>
           <div className="grid grid-cols-2 gap-2">
-            <div>
-              <TextField
-                label="X"
-                //value={Math.round(mousePosition.x)}
-                fullWidth
-                InputProps={{ readOnly: true }}
-                size="small"
-              />
-            </div>
-            <div>
-              <TextField
-                label="Y"
-                //value={Math.round(mousePosition.y)}
-                fullWidth
-                InputProps={{ readOnly: true }}
-                size="small"
-              />
-            </div>
+            <TextField
+              //value={Math.round(mousePosition.x)}
+              fullWidth
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start" >
+                      <div style={{ fontSize: '11px' }}>
+                        X
+                      </div>
+                    </InputAdornment>),
+                  style: { fontSize: '13px', height: '25px' },
+                },
+                /*
+                inputLabel: {
+                  shrink: false,
+                  style: { fontSize: '10px' }
+                },
+                */
+              }}
+              margin="dense"
+            />
+            <TextField
+              id="standard-basic"
+              //value={Math.round(mousePosition.y)}
+              fullWidth
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start" >
+                      <div style={{ fontSize: '11px' }}>
+                        Y
+                      </div>
+                    </InputAdornment>),
+                  style: { fontSize: '13px', height: '25px' },
+                },
+              }}
+              margin="dense"
+            />
           </div>
         </CardContent>
       </Card >
-    </div >
-    /*
-    <div style={{ padding: '10px', border: '0px solid black', width: '200px' }}>
-      <h3>Settings</h3>
-      <div>
-        <label>X:</label>
-        <input type="number" name="x" value={localX} onChange={handleInputChange} />
-      </div>
-      <div>
-        <label>Y:</label>
-        <input type="number" name="y" value={localY} onChange={handleInputChange} />
-      </div>
-      <div>
-        <label>Stroke Width:</label>
-        <input type="number" name="strokeWidth" value={localStrokeWidth} onChange={handleInputChange} />
-      </div>
-      <div>
-        <label>Stroke Color:</label>
-        <input type="text" name="strokeColor" value={localStrokeColor} onChange={handleInputChange} />
-      </div>
-      <div>
-        <label>Angle:</label>
-        <input type="number" name="angle" value={localAngle} onChange={handleInputChange} />
-      </div>
-    </div>
-    */
-
+    </Box >
   );
 };
 
 export default SettingsPanel;
+

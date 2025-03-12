@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Box } from "@mui/material/";
+import { Box, Tooltip, IconButton } from "@mui/material/";
 import FormatAlignLeftIcon from '@mui/icons-material/FormatAlignLeft';
 import FormatAlignCenterIcon from '@mui/icons-material/FormatAlignCenter';
 import FormatAlignRightIcon from '@mui/icons-material/FormatAlignRight';
@@ -34,11 +34,27 @@ const CanvasView: React.FC<CanvasViewProps> = ({ canvasRef }) => {
           },
         }}
       >
-        <FormatAlignLeftIcon />
-        <FormatAlignCenterIcon />
-        <FormatAlignRightIcon />
+        <Tooltip title='Align Left'>
+          <IconButton>
+            <FormatAlignLeftIcon />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title='Align Center'>
+          <IconButton>
+            <FormatAlignCenterIcon />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title='Align Right'>
+          <IconButton>
+            <FormatAlignRightIcon />
+          </IconButton>
+        </Tooltip>
         <Divider orientation="vertical" flexItem />
-        <FormatBoldIcon />
+        <Tooltip title='Bold'>
+          <IconButton>
+            <FormatBoldIcon />
+          </IconButton>
+        </Tooltip>
       </Box>
       <canvas
         ref={canvasRef}
